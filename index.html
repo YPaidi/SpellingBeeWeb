@@ -2,21 +2,27 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Interactive Spelling Bee</title>
     <style>
+        /* FIX 1: Strict sizing to prevent ANY element from pushing the screen wide */
+        * {
+            box-sizing: border-box;
+        }
+        
         /* CSS: Visual Design */
         body {
             background-color: #2C3E50;
             color: #ECF0F1;
             font-family: Arial, sans-serif;
             margin: 0;
+            padding: 0;
             display: flex;
             flex-direction: column;
             height: 100vh;
-            /* FIX: Allow scrolling on very tiny screens instead of cutting things off */
+            width: 100vw;
             overflow-y: auto; 
-            overflow-x: hidden;
+            overflow-x: hidden; /* STRICTLY disables horizontal scrolling */
         }
         .top-bar {
             background-color: #34495E;
@@ -25,6 +31,7 @@
             justify-content: center;
             gap: 15px;
             flex-wrap: wrap; 
+            width: 100%;
         }
         button {
             font-size: 16px;
@@ -49,17 +56,22 @@
             justify-content: center;
             text-align: center;
             padding: 20px; 
+            width: 100%;
         }
         #instruction { font-size: 24px; margin-bottom: 20px; }
         #timer { font-size: 80px; font-family: monospace; font-weight: bold; color: #F1C40F; margin: 20px 0; }
         
         #word-display { 
-            font-size: clamp(35px, 10vw, 100px); 
+            font-size: clamp(30px, 8vw, 100px); 
             font-weight: bold; 
             color: #2ECC71; 
-            letter-spacing: 5px; 
-            word-wrap: break-word; 
+            letter-spacing: 3px; 
             max-width: 100%;
+            /* FIX 2: Force continuous question marks to wrap! */
+            word-wrap: break-word; 
+            overflow-wrap: anywhere; 
+            word-break: break-all; 
+            padding: 0 10px;
         }
         
         .bottom-bar {
@@ -69,6 +81,7 @@
             justify-content: space-between;
             align-items: center;
             gap: 10px;
+            width: 100%;
         }
         #progress-text { font-size: 20px; font-weight: bold; text-align: center; }
 
@@ -85,9 +98,8 @@
             }
             #instruction { font-size: 18px; margin-bottom: 10px;}
             #timer { font-size: 60px; margin: 10px 0; }
-            #word-display { letter-spacing: 2px; }
+            #word-display { letter-spacing: 1px; }
             
-            /* FIX: Keep bottom bar in a row, just make everything smaller to fit */
             .bottom-bar {
                 padding: 10px;
             }
