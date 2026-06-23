@@ -10,7 +10,6 @@
         }
         
         body {
-            /* Changed to a slightly darker, more "advanced" theme color (Deep Purple) */
             background-color: #2C1E3D; 
             color: #ECF0F1;
             font-family: Arial, sans-serif;
@@ -123,6 +122,7 @@
 </head>
 <body>
 
+    <!-- Top Controls -->
     <div class="top-bar">
         <button class="btn-nav" onclick="startRound()">Start / Restart</button>
         <button class="btn-nav" onclick="pauseTimer()">Pause</button>
@@ -132,12 +132,17 @@
         <button class="btn-special" onclick="randomizeWords()">Randomise</button>
     </div>
 
+    <!-- Main Display -->
     <div class="main-content">
         <div id="instruction">Press Start to Begin</div>
         <div id="timer">00</div>
         <div id="word-display">? ? ?</div>
+        
+        <!-- NEW: Check Answer Button -->
+        <button class="btn-action" id="reveal-btn" onclick="revealWord(true)" style="display: none; margin-top: 30px; padding: 15px 30px; font-size: 18px; border-radius: 8px;">Check Answer</button>
     </div>
 
+    <!-- Bottom Controls -->
     <div class="bottom-bar">
         <button class="btn-nav" onclick="prevWord()">
             <span class="desktop-text">&lt; Previous Word</span>
@@ -152,6 +157,7 @@
         </button>
     </div>
 
+    <!-- JavaScript: The Logic -->
     <script>
         // The Advanced Word List (300 High-Level British English Words & UK/US Traps)
         const words = [
@@ -192,7 +198,6 @@
         window.speechSynthesis.onvoiceschanged = () => { window.speechSynthesis.getVoices(); };
 
         function updateUI() {
-            // This line automatically counts how many words are in your list above!
             document.getElementById('progress-text').innerText = `Word ${currentIndex + 1} of ${words.length}`;
         }
 
@@ -216,6 +221,7 @@
             document.getElementById('timer').innerText = "00";
             document.getElementById('timer').style.color = "#F1C40F";
             document.getElementById('instruction').innerText = "Words Randomised! Press Start to Begin.";
+            document.getElementById('reveal-btn').style.display = 'none';
             
             updateUI();
         }
@@ -229,12 +235,14 @@
             const currentWord = words[currentIndex];
             
             document.getElementById('word-display').innerText = "? ".repeat(currentWord.length).trim();
-            
             document.getElementById('instruction').innerText = "Listen to the word and write it down!";
             
             let timerDisplay = document.getElementById('timer');
             timerDisplay.innerText = "--";
             timerDisplay.style.color = "#F1C40F";
+
+            // Show the "Check Answer" button so they can click it early
+            document.getElementById('reveal-btn').style.display = 'inline-block';
 
             updateUI();
 
@@ -275,7 +283,7 @@
                 timeLeft--;
                 timerInterval = setTimeout(runTimer, 1000);
             } else {
-                revealWord();
+                revealWord(false); // Called automatically when time runs out
             }
         }
 
@@ -290,14 +298,21 @@
             }
         }
 
-        function revealWord() {
+        // Updated to accept a flag indicating if it was clicked early
+        function revealWord(isEarly) {
             clearInterval(timerInterval);
+            clearTimeout(waitTimeout); // Stop any overlapping timeouts
+            
             document.getElementById('word-display').innerText = words[currentIndex];
             document.getElementById('instruction').innerText = "Check your spelling!";
             
             let timerDisplay = document.getElementById('timer');
-            timerDisplay.innerText = "TIME'S UP";
+            // If they clicked the button early, display "CHECK", otherwise "TIME'S UP"
+            timerDisplay.innerText = isEarly ? "CHECK" : "TIME'S UP";
             timerDisplay.style.color = "#2ECC71";
+
+            // Hide the "Check Answer" button once the word is revealed
+            document.getElementById('reveal-btn').style.display = 'none';
 
             waitTimeout = setTimeout(nextWordAuto, 5000);
         }
@@ -310,6 +325,7 @@
                 document.getElementById('instruction').innerText = "Spelling Bee Complete! Well done!";
                 document.getElementById('word-display').innerText = "🏆";
                 document.getElementById('timer').innerText = "";
+                document.getElementById('reveal-btn').style.display = 'none';
             }
         }
 
@@ -327,7 +343,6 @@
             }
         }
 
-        // Boot up the UI and the auto-counter
         updateUI();
     </script>
 </body>
