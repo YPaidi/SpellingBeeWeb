@@ -14,7 +14,9 @@
             display: flex;
             flex-direction: column;
             height: 100vh;
-            overflow: hidden;
+            /* FIX: Allow scrolling on very tiny screens instead of cutting things off */
+            overflow-y: auto; 
+            overflow-x: hidden;
         }
         .top-bar {
             background-color: #34495E;
@@ -22,7 +24,7 @@
             display: flex;
             justify-content: center;
             gap: 15px;
-            flex-wrap: wrap; /* Allows buttons to wrap on smaller screens */
+            flex-wrap: wrap; 
         }
         button {
             font-size: 16px;
@@ -46,19 +48,17 @@
             align-items: center;
             justify-content: center;
             text-align: center;
-            padding: 0 20px; /* Gives a little breathing room on the sides */
+            padding: 20px; 
         }
         #instruction { font-size: 24px; margin-bottom: 20px; }
         #timer { font-size: 80px; font-family: monospace; font-weight: bold; color: #F1C40F; margin: 20px 0; }
         
-        /* THE MOBILE FIX FOR THE TEXT IS HERE */
         #word-display { 
-            /* clamp(minimum, preferred, maximum) - automatically scales the font! */
             font-size: clamp(35px, 10vw, 100px); 
             font-weight: bold; 
             color: #2ECC71; 
             letter-spacing: 5px; 
-            word-wrap: break-word; /* Forces long words to drop to the next line if needed */
+            word-wrap: break-word; 
             max-width: 100%;
         }
         
@@ -68,8 +68,9 @@
             display: flex;
             justify-content: space-between;
             align-items: center;
+            gap: 10px;
         }
-        #progress-text { font-size: 20px; font-weight: bold; }
+        #progress-text { font-size: 20px; font-weight: bold; text-align: center; }
 
         /* --- MOBILE PHONE LAYOUT SETTINGS --- */
         @media (max-width: 600px) {
@@ -77,20 +78,25 @@
                 gap: 8px;
                 padding: 10px;
             }
-            button {
-                font-size: 14px; /* Slightly smaller text for phone buttons */
+            .top-bar button {
+                font-size: 14px; 
                 padding: 8px 10px;
-                flex-grow: 1; /* Makes buttons stretch to fill the screen evenly */
+                flex-grow: 1; 
             }
             #instruction { font-size: 18px; margin-bottom: 10px;}
             #timer { font-size: 60px; margin: 10px 0; }
+            #word-display { letter-spacing: 2px; }
+            
+            /* FIX: Keep bottom bar in a row, just make everything smaller to fit */
             .bottom-bar {
-                flex-direction: column; /* Stack the bottom bar items vertically on phones */
-                gap: 15px;
-                padding: 15px;
+                padding: 10px;
             }
-            #word-display {
-                letter-spacing: 2px; /* Less spacing on phones to save space */
+            .bottom-bar button {
+                font-size: 13px;
+                padding: 8px 10px;
+            }
+            #progress-text { 
+                font-size: 15px; 
             }
         }
     </style>
@@ -113,13 +119,12 @@
     </div>
 
     <div class="bottom-bar">
-        <button class="btn-nav" onclick="prevWord()">&lt; Previous Word</button>
+        <button class="btn-nav" onclick="prevWord()">&lt; Prev</button>
         <div id="progress-text">Word 1 of 200</div>
-        <button class="btn-nav" onclick="nextWordManual()">Next Word &gt;</button>
+        <button class="btn-nav" onclick="nextWordManual()">Next &gt;</button>
     </div>
 
     <script>
-        // The Word List (200 A2-level British English words from A to Z)
         const words = [
             "accident", "address", "adventure", "aeroplane", "afternoon", "alphabet", "animal", "autumn",
             "balloon", "banana", "basket", "beautiful", "bicycle", "biscuit", "blanket", "bookshelf", "borrow", "breakfast", "bridge",
@@ -214,15 +219,12 @@
         function playAudio() {
             if ('speechSynthesis' in window) {
                 window.speechSynthesis.cancel();
-                
                 let msg = new SpeechSynthesisUtterance(words[currentIndex]);
-                
                 let voices = window.speechSynthesis.getVoices();
                 let gbVoice = voices.find(v => v.lang === 'en-GB' || v.name.includes('UK') || v.name.includes('British'));
                 if (gbVoice) {
                     msg.voice = gbVoice;
                 }
-                
                 msg.rate = 0.8; 
                 window.speechSynthesis.speak(msg);
             } else {
@@ -232,9 +234,7 @@
 
         function runTimer() {
             if (isPaused) return;
-            
             let timerDisplay = document.getElementById('timer');
-            
             timerDisplay.innerText = timeLeft < 10 ? "0" + timeLeft : timeLeft;
             
             if (timeLeft <= 5) {
