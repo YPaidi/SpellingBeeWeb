@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Interactive Spelling Bee</title>
     <style>
-        /* CSS: Visual Design (Matches your Python App) */
+        /* CSS: Visual Design */
         body {
             background-color: #2C3E50;
             color: #ECF0F1;
@@ -32,10 +32,11 @@
             border-radius: 5px;
             cursor: pointer;
             color: white;
+            transition: opacity 0.2s;
         }
         .btn-nav { background-color: #2980B9; }
         .btn-action { background-color: #E74C3C; }
-        .btn-special { background-color: #8E44AD; } /* Purple for randomise */
+        .btn-special { background-color: #8E44AD; } 
         button:hover { opacity: 0.8; }
         
         .main-content {
@@ -45,10 +46,21 @@
             align-items: center;
             justify-content: center;
             text-align: center;
+            padding: 0 20px; /* Gives a little breathing room on the sides */
         }
         #instruction { font-size: 24px; margin-bottom: 20px; }
         #timer { font-size: 80px; font-family: monospace; font-weight: bold; color: #F1C40F; margin: 20px 0; }
-        #word-display { font-size: 100px; font-weight: bold; color: #2ECC71; letter-spacing: 5px; }
+        
+        /* THE MOBILE FIX FOR THE TEXT IS HERE */
+        #word-display { 
+            /* clamp(minimum, preferred, maximum) - automatically scales the font! */
+            font-size: clamp(35px, 10vw, 100px); 
+            font-weight: bold; 
+            color: #2ECC71; 
+            letter-spacing: 5px; 
+            word-wrap: break-word; /* Forces long words to drop to the next line if needed */
+            max-width: 100%;
+        }
         
         .bottom-bar {
             background-color: #34495E;
@@ -58,6 +70,29 @@
             align-items: center;
         }
         #progress-text { font-size: 20px; font-weight: bold; }
+
+        /* --- MOBILE PHONE LAYOUT SETTINGS --- */
+        @media (max-width: 600px) {
+            .top-bar {
+                gap: 8px;
+                padding: 10px;
+            }
+            button {
+                font-size: 14px; /* Slightly smaller text for phone buttons */
+                padding: 8px 10px;
+                flex-grow: 1; /* Makes buttons stretch to fill the screen evenly */
+            }
+            #instruction { font-size: 18px; margin-bottom: 10px;}
+            #timer { font-size: 60px; margin: 10px 0; }
+            .bottom-bar {
+                flex-direction: column; /* Stack the bottom bar items vertically on phones */
+                gap: 15px;
+                padding: 15px;
+            }
+            #word-display {
+                letter-spacing: 2px; /* Less spacing on phones to save space */
+            }
+        }
     </style>
 </head>
 <body>
@@ -68,7 +103,7 @@
         <button class="btn-nav" onclick="resumeTimer()">Resume</button>
         <button class="btn-action" onclick="playAudio()">Replay Audio</button>
         <button class="btn-nav" onclick="toggleAutoVoice()" id="auto-btn">Auto-Voice: ON</button>
-        <button class="btn-special" onclick="randomizeWords()">Randomise Words</button>
+        <button class="btn-special" onclick="randomizeWords()">Randomise</button>
     </div>
 
     <div class="main-content">
@@ -122,7 +157,6 @@
         let timerInterval;
         let waitTimeout;
 
-        // Ensure voices are loaded (browser quirk)
         window.speechSynthesis.onvoiceschanged = () => { window.speechSynthesis.getVoices(); };
 
         function updateUI() {
@@ -135,19 +169,16 @@
         }
 
         function randomizeWords() {
-            // Fisher-Yates shuffle algorithm to randomize the array
             for (let i = words.length - 1; i > 0; i--) {
                 const j = Math.floor(Math.random() * (i + 1));
-                [words[i], words[j]] = [words[j], words[i]]; // Swap elements
+                [words[i], words[j]] = [words[j], words[i]]; 
             }
             
-            // Reset the game state
             currentIndex = 0;
             clearInterval(timerInterval);
             clearTimeout(waitTimeout);
             isPaused = false;
             
-            // Reset the display
             document.getElementById('word-display').innerText = "???";
             document.getElementById('timer').innerText = "00";
             document.getElementById('timer').style.color = "#F1C40F";
@@ -174,7 +205,6 @@
 
             if (autoVoice) {
                 playAudio();
-                // Start timer 1.5s after audio triggers
                 setTimeout(runTimer, 1500); 
             } else {
                 runTimer();
@@ -183,19 +213,17 @@
 
         function playAudio() {
             if ('speechSynthesis' in window) {
-                // Cancel any currently playing speech
                 window.speechSynthesis.cancel();
                 
                 let msg = new SpeechSynthesisUtterance(words[currentIndex]);
                 
-                // Attempt to find a British voice
                 let voices = window.speechSynthesis.getVoices();
                 let gbVoice = voices.find(v => v.lang === 'en-GB' || v.name.includes('UK') || v.name.includes('British'));
                 if (gbVoice) {
                     msg.voice = gbVoice;
                 }
                 
-                msg.rate = 0.8; // Speak slightly slower for learners
+                msg.rate = 0.8; 
                 window.speechSynthesis.speak(msg);
             } else {
                 alert("Sorry, your browser does not support text-to-speech.");
@@ -207,11 +235,10 @@
             
             let timerDisplay = document.getElementById('timer');
             
-            // Format number to always be two digits
             timerDisplay.innerText = timeLeft < 10 ? "0" + timeLeft : timeLeft;
             
             if (timeLeft <= 5) {
-                timerDisplay.style.color = "#E74C3C"; // Turn red
+                timerDisplay.style.color = "#E74C3C"; 
             }
             
             if (timeLeft > 0) {
@@ -270,7 +297,6 @@
             }
         }
 
-        // Initialize on page load
         updateUI();
     </script>
 </body>
