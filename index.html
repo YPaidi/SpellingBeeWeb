@@ -3,14 +3,14 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Interactive Spelling Bee</title>
+    <title>Advanced Spelling Bee</title>
     <style>
         * {
             box-sizing: border-box;
         }
         
         body {
-            background-color: #2C3E50;
+            background-color: #2C1E3D; 
             color: #ECF0F1;
             font-family: Arial, sans-serif;
             margin: 0;
@@ -24,7 +24,7 @@
         }
         
         .top-bar {
-            background-color: #34495E;
+            background-color: #1A1124;
             padding: 15px;
             display: flex;
             justify-content: center;
@@ -75,7 +75,7 @@
         }
         
         .bottom-bar {
-            background-color: #34495E;
+            background-color: #1A1124;
             padding: 20px;
             display: flex;
             justify-content: space-between;
@@ -86,7 +86,6 @@
         
         #progress-text { font-size: 20px; font-weight: bold; text-align: center; }
 
-        /* SMART BUTTON TEXT: Default is to show Desktop, hide Mobile */
         .mobile-text { display: none; }
         .desktop-text { display: inline; }
 
@@ -116,7 +115,6 @@
                 font-size: 15px; 
             }
 
-            /* SMART BUTTON TEXT: On small screens, hide Desktop, show Mobile */
             .mobile-text { display: inline; }
             .desktop-text { display: none; }
         }
@@ -124,6 +122,7 @@
 </head>
 <body>
 
+    <!-- Top Controls -->
     <div class="top-bar">
         <button class="btn-nav" onclick="startRound()">Start / Restart</button>
         <button class="btn-nav" onclick="pauseTimer()">Pause</button>
@@ -133,19 +132,23 @@
         <button class="btn-special" onclick="randomizeWords()">Randomise</button>
     </div>
 
+    <!-- Main Display -->
     <div class="main-content">
         <div id="instruction">Press Start to Begin</div>
         <div id="timer">00</div>
         <div id="word-display">? ? ?</div>
+        
+        <button class="btn-action" id="reveal-btn" onclick="revealWord(true)" style="display: none; margin-top: 30px; padding: 15px 30px; font-size: 18px; border-radius: 8px;">Check Answer</button>
     </div>
 
+    <!-- Bottom Controls -->
     <div class="bottom-bar">
         <button class="btn-nav" onclick="prevWord()">
             <span class="desktop-text">&lt; Previous Word</span>
             <span class="mobile-text">&lt; Prev</span>
         </button>
         
-        <div id="progress-text">Word 1 of 200</div>
+        <div id="progress-text">Loading...</div>
         
         <button class="btn-nav" onclick="nextWordManual()">
             <span class="desktop-text">Next Word &gt;</span>
@@ -153,6 +156,7 @@
         </button>
     </div>
 
+    <!-- JavaScript: The Logic -->
     <script>
         const words = [
             "accident", "address", "adventure", "aeroplane", "afternoon", "alphabet", "animal", "autumn",
@@ -217,6 +221,7 @@
             document.getElementById('timer').innerText = "00";
             document.getElementById('timer').style.color = "#F1C40F";
             document.getElementById('instruction').innerText = "Words Randomised! Press Start to Begin.";
+            document.getElementById('reveal-btn').style.display = 'none';
             
             updateUI();
         }
@@ -230,12 +235,13 @@
             const currentWord = words[currentIndex];
             
             document.getElementById('word-display').innerText = "? ".repeat(currentWord.length).trim();
-            
             document.getElementById('instruction').innerText = "Listen to the word and write it down!";
             
             let timerDisplay = document.getElementById('timer');
             timerDisplay.innerText = "--";
             timerDisplay.style.color = "#F1C40F";
+
+            document.getElementById('reveal-btn').style.display = 'inline-block';
 
             updateUI();
 
@@ -276,7 +282,7 @@
                 timeLeft--;
                 timerInterval = setTimeout(runTimer, 1000);
             } else {
-                revealWord();
+                revealWord(false); 
             }
         }
 
@@ -291,14 +297,21 @@
             }
         }
 
-        function revealWord() {
+        function revealWord(isEarly) {
             clearInterval(timerInterval);
+            clearTimeout(waitTimeout); 
+            
             document.getElementById('word-display').innerText = words[currentIndex];
             document.getElementById('instruction').innerText = "Check your spelling!";
             
             let timerDisplay = document.getElementById('timer');
-            timerDisplay.innerText = "TIME'S UP";
+            
+            // FIX: If they click "Check Answer", completely clear the timer text. 
+            // If the time naturally runs out, it will still show "TIME'S UP"
+            timerDisplay.innerText = isEarly ? "" : "TIME'S UP";
             timerDisplay.style.color = "#2ECC71";
+
+            document.getElementById('reveal-btn').style.display = 'none';
 
             waitTimeout = setTimeout(nextWordAuto, 5000);
         }
@@ -311,6 +324,7 @@
                 document.getElementById('instruction').innerText = "Spelling Bee Complete! Well done!";
                 document.getElementById('word-display').innerText = "🏆";
                 document.getElementById('timer').innerText = "";
+                document.getElementById('reveal-btn').style.display = 'none';
             }
         }
 
