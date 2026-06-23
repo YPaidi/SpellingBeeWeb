@@ -1,0 +1,234 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Interactive Spelling Bee</title>
+    <style>
+        /* CSS: Visual Design (Matches your Python App) */
+        body {
+            background-color: #2C3E50;
+            color: #ECF0F1;
+            font-family: Arial, sans-serif;
+            margin: 0;
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+            overflow: hidden;
+        }
+        .top-bar {
+            background-color: #34495E;
+            padding: 15px;
+            display: flex;
+            justify-content: center;
+            gap: 15px;
+        }
+        button {
+            font-size: 16px;
+            font-weight: bold;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            color: white;
+        }
+        .btn-nav { background-color: #2980B9; }
+        .btn-action { background-color: #E74C3C; }
+        button:hover { opacity: 0.8; }
+        
+        .main-content {
+            flex-grow: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+        }
+        #instruction { font-size: 24px; margin-bottom: 20px; }
+        #timer { font-size: 80px; font-family: monospace; font-weight: bold; color: #F1C40F; margin: 20px 0; }
+        #word-display { font-size: 100px; font-weight: bold; color: #2ECC71; letter-spacing: 5px; }
+        
+        .bottom-bar {
+            background-color: #34495E;
+            padding: 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        #progress-text { font-size: 20px; font-weight: bold; }
+    </style>
+</head>
+<body>
+
+    <div class="top-bar">
+        <button class="btn-nav" onclick="startRound()">Start / Restart</button>
+        <button class="btn-nav" onclick="pauseTimer()">Pause</button>
+        <button class="btn-nav" onclick="resumeTimer()">Resume</button>
+        <button class="btn-action" onclick="playAudio()">Replay Audio</button>
+        <button class="btn-nav" onclick="toggleAutoVoice()" id="auto-btn">Auto-Voice: ON</button>
+    </div>
+
+    <div class="main-content">
+        <div id="instruction">Press Start to Begin</div>
+        <div id="timer">00</div>
+        <div id="word-display">???</div>
+    </div>
+
+    <div class="bottom-bar">
+        <button class="btn-nav" onclick="prevWord()">&lt; Previous Word</button>
+        <div id="progress-text">Word 1 of 300</div>
+        <button class="btn-nav" onclick="nextWordManual()">Next Word &gt;</button>
+    </div>
+
+    <script>
+        // The Word List (Same A2 list)
+        const words = [
+            "accident", "across", "activity", "actor", "actually", "adventure", "aeroplane", "afternoon", "already", "always",
+            "amazing", "angry", "another", "answer", "anyone", "anything", "anywhere", "apartment", "apologise", "appear",
+            "apple", "architect", "around", "arrive", "article", "artist", "asleep", "assistant", "athlete", "attractive",
+            "aunt", "autumn", "available", "awesome", "awful", "background", "backpack", "badly", "baker", "balloon",
+            "banana", "bandage", "bank", "barbecue", "baseball", "basket", "bathroom", "battery", "beautiful", "because",
+            "become", "bedroom", "before", "begin", "behind", "believe", "below", "beside", "better", "bicycle",
+            "biscuit", "blanket", "blonde", "board", "boat", "body", "bookshelf", "boring", "borrow", "bottle"
+            // Note: Truncated for space, you can paste the rest of your 300 words here!
+        ];
+
+        let currentIndex = 0;
+        let timeLeft = 0;
+        const timerDuration = 28;
+        let isPaused = false;
+        let autoVoice = true;
+        let timerInterval;
+        let waitTimeout;
+
+        // Ensure voices are loaded (browser quirk)
+        window.speechSynthesis.onvoiceschanged = () => { window.speechSynthesis.getVoices(); };
+
+        function updateUI() {
+            document.getElementById('progress-text').innerText = `Word ${currentIndex + 1} of ${words.length}`;
+        }
+
+        function toggleAutoVoice() {
+            autoVoice = !autoVoice;
+            document.getElementById('auto-btn').innerText = `Auto-Voice: ${autoVoice ? 'ON' : 'OFF'}`;
+        }
+
+        function startRound() {
+            clearInterval(timerInterval);
+            clearTimeout(waitTimeout);
+            isPaused = false;
+            timeLeft = timerDuration;
+            
+            const currentWord = words[currentIndex];
+            document.getElementById('word-display').innerText = "?".repeat(currentWord.length);
+            document.getElementById('instruction').innerText = "Listen to the word and write it down!";
+            
+            let timerDisplay = document.getElementById('timer');
+            timerDisplay.innerText = "--";
+            timerDisplay.style.color = "#F1C40F";
+
+            updateUI();
+
+            if (autoVoice) {
+                playAudio();
+                // Start timer 1.5s after audio triggers
+                setTimeout(runTimer, 1500); 
+            } else {
+                runTimer();
+            }
+        }
+
+        function playAudio() {
+            if ('speechSynthesis' in window) {
+                // Cancel any currently playing speech
+                window.speechSynthesis.cancel();
+                
+                let msg = new SpeechSynthesisUtterance(words[currentIndex]);
+                
+                // Attempt to find a British voice
+                let voices = window.speechSynthesis.getVoices();
+                let gbVoice = voices.find(v => v.lang === 'en-GB' || v.name.includes('UK') || v.name.includes('British'));
+                if (gbVoice) {
+                    msg.voice = gbVoice;
+                }
+                
+                msg.rate = 0.8; // Speak slightly slower for learners
+                window.speechSynthesis.speak(msg);
+            } else {
+                alert("Sorry, your browser does not support text-to-speech.");
+            }
+        }
+
+        function runTimer() {
+            if (isPaused) return;
+            
+            let timerDisplay = document.getElementById('timer');
+            
+            // Format number to always be two digits
+            timerDisplay.innerText = timeLeft < 10 ? "0" + timeLeft : timeLeft;
+            
+            if (timeLeft <= 5) {
+                timerDisplay.style.color = "#E74C3C"; // Turn red
+            }
+            
+            if (timeLeft > 0) {
+                timeLeft--;
+                timerInterval = setTimeout(runTimer, 1000);
+            } else {
+                revealWord();
+            }
+        }
+
+        function pauseTimer() {
+            isPaused = true;
+        }
+
+        function resumeTimer() {
+            if (isPaused && timeLeft > 0) {
+                isPaused = false;
+                runTimer();
+            }
+        }
+
+        function revealWord() {
+            clearInterval(timerInterval);
+            document.getElementById('word-display').innerText = words[currentIndex];
+            document.getElementById('instruction').innerText = "Check your spelling!";
+            
+            let timerDisplay = document.getElementById('timer');
+            timerDisplay.innerText = "TIME'S UP";
+            timerDisplay.style.color = "#2ECC71";
+
+            waitTimeout = setTimeout(nextWordAuto, 5000);
+        }
+
+        function nextWordAuto() {
+            if (currentIndex < words.length - 1) {
+                currentIndex++;
+                startRound();
+            } else {
+                document.getElementById('instruction').innerText = "Spelling Bee Complete! Well done!";
+                document.getElementById('word-display').innerText = "🏆";
+                document.getElementById('timer').innerText = "";
+            }
+        }
+
+        function nextWordManual() {
+            if (currentIndex < words.length - 1) {
+                currentIndex++;
+                startRound();
+            }
+        }
+
+        function prevWord() {
+            if (currentIndex > 0) {
+                currentIndex--;
+                startRound();
+            }
+        }
+
+        // Initialize on page load
+        updateUI();
+    </script>
+</body>
+</html>
