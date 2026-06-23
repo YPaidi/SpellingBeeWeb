@@ -1,0 +1,334 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Advanced Spelling Bee</title>
+    <style>
+        * {
+            box-sizing: border-box;
+        }
+        
+        body {
+            /* Changed to a slightly darker, more "advanced" theme color (Deep Purple) */
+            background-color: #2C1E3D; 
+            color: #ECF0F1;
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+            width: 100vw;
+            overflow-y: auto; 
+            overflow-x: hidden; 
+        }
+        
+        .top-bar {
+            background-color: #1A1124;
+            padding: 15px;
+            display: flex;
+            justify-content: center;
+            gap: 15px;
+            flex-wrap: wrap; 
+            width: 100%;
+        }
+        
+        button {
+            font-size: 16px;
+            font-weight: bold;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            color: white;
+            transition: opacity 0.2s;
+        }
+        
+        .btn-nav { background-color: #2980B9; }
+        .btn-action { background-color: #E74C3C; }
+        .btn-special { background-color: #8E44AD; } 
+        button:hover { opacity: 0.8; }
+        
+        .main-content {
+            flex-grow: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            padding: 20px; 
+            width: 100%;
+        }
+        
+        #instruction { font-size: 24px; margin-bottom: 20px; }
+        #timer { font-size: 80px; font-family: monospace; font-weight: bold; color: #F1C40F; margin: 20px 0; }
+        
+        #word-display { 
+            font-size: clamp(25px, 8vw, 100px); 
+            font-weight: bold; 
+            color: #2ECC71; 
+            letter-spacing: 2px; 
+            max-width: 100%;
+            line-height: 1.3; 
+            word-wrap: break-word; 
+            padding: 0 10px;
+        }
+        
+        .bottom-bar {
+            background-color: #1A1124;
+            padding: 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 10px;
+            width: 100%;
+        }
+        
+        #progress-text { font-size: 20px; font-weight: bold; text-align: center; }
+
+        .mobile-text { display: none; }
+        .desktop-text { display: inline; }
+
+        /* --- MOBILE PHONE LAYOUT SETTINGS --- */
+        @media (max-width: 600px) {
+            .top-bar {
+                gap: 8px;
+                padding: 10px;
+            }
+            .top-bar button {
+                font-size: 14px; 
+                padding: 8px 10px;
+                flex-grow: 1; 
+            }
+            #instruction { font-size: 18px; margin-bottom: 10px;}
+            #timer { font-size: 60px; margin: 10px 0; }
+            #word-display { letter-spacing: 1px; }
+            
+            .bottom-bar {
+                padding: 10px;
+            }
+            .bottom-bar button {
+                font-size: 13px;
+                padding: 8px 10px;
+            }
+            #progress-text { 
+                font-size: 15px; 
+            }
+
+            .mobile-text { display: inline; }
+            .desktop-text { display: none; }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="top-bar">
+        <button class="btn-nav" onclick="startRound()">Start / Restart</button>
+        <button class="btn-nav" onclick="pauseTimer()">Pause</button>
+        <button class="btn-nav" onclick="resumeTimer()">Resume</button>
+        <button class="btn-action" onclick="playAudio()">Replay Audio</button>
+        <button class="btn-nav" onclick="toggleAutoVoice()" id="auto-btn">Auto-Voice: ON</button>
+        <button class="btn-special" onclick="randomizeWords()">Randomise</button>
+    </div>
+
+    <div class="main-content">
+        <div id="instruction">Press Start to Begin</div>
+        <div id="timer">00</div>
+        <div id="word-display">? ? ?</div>
+    </div>
+
+    <div class="bottom-bar">
+        <button class="btn-nav" onclick="prevWord()">
+            <span class="desktop-text">&lt; Previous Word</span>
+            <span class="mobile-text">&lt; Prev</span>
+        </button>
+        
+        <div id="progress-text">Loading...</div>
+        
+        <button class="btn-nav" onclick="nextWordManual()">
+            <span class="desktop-text">Next Word &gt;</span>
+            <span class="mobile-text">Next &gt;</span>
+        </button>
+    </div>
+
+    <script>
+        // The Advanced Word List (300 High-Level British English Words & UK/US Traps)
+        const words = [
+            "accommodate", "accumulate", "acquire", "aluminium", "amateur", "ambiguous", "analyse", "anonymous", "anticipate", "apologise", "apparatus", "apparent", "appreciate", "appropriate", "archaeology", "architecture", "artificial", "assessment", "atmosphere", "authentic",
+            "bacteria", "behaviour", "beneficial", "bizarre", "boundary", "bureaucracy",
+            "camouflage", "campaign", "catalogue", "catastrophe", "cemetery", "characteristic", "chauffeur", "colleague", "colourful", "committee", "communicate", "competence", "complacent", "comprehend", "connoisseur", "conscience", "conscious", "consequence", "continuous", "controversial", "correspondence", "counsellor",
+            "deceive", "decision", "defence", "definitely", "deliberately", "descend", "desperate", "deteriorate", "dilemma", "disappearance", "disastrous", "discipline", "discrepancy", "disease", "dissatisfied", "draught",
+            "eccentric", "ecstasy", "efficiency", "embarrass", "emergency", "encyclopaedia", "endeavour", "enthusiasm", "entrepreneur", "environment", "exaggerate", "excellent", "exhaust", "exhilarate", "experience", "experiment", "extraordinary",
+            "fascinate", "favouritism", "flavour", "fluorescent", "foreigner", "foreseeable", "forfeit", "frequency", "fulfil",
+            "glamour", "guarantee", "guidance",
+            "handkerchief", "harass", "hierarchy", "honourable", "humorous", "hypocrisy",
+            "idiosyncrasy", "ignorance", "illustrate", "immediately", "implement", "impromptu", "inadvertently", "inconvenience", "independent", "indispensable", "individual", "influential", "infrastructure", "ingredient", "initiative", "innocent", "intelligence", "interference", "interrupt", "irrelevant", "irresistible",
+            "jeopardy", "jewellery", "judgment",
+            "kilometre", "knowledge", "knuckle",
+            "laboratory", "language", "leisure", "leukaemia", "liaison", "library", "lieutenant", "literature",
+            "maintenance", "manoeuvre", "manufacture", "mathematics", "meagre", "medicine", "medieval", "millennium", "miniature", "miscellaneous", "mischievous", "moustache", "mysterious",
+            "narrative", "naturally", "necessary", "negligible", "negotiable", "neighbourhood", "noticeable", "nuisance",
+            "obedience", "obstacle", "occasion", "occasionally", "occurrence", "offence", "omission", "opportunity", "organise", "orthopaedic", "outrageous",
+            "paediatrician", "pamphlet", "parallel", "paralysed", "parliament", "particularly", "passionate", "peculiar", "perceive", "performance", "permanent", "perseverance", "persistent", "personnel", "persuade", "phenomenon", "physician", "plough", "politician", "possession", "practically", "preference", "prejudice", "preparation", "privilege", "probably", "procedure", "procrastinate", "profession", "professor", "programme", "pronunciation", "propaganda", "psychology",
+            "qualification", "quarantine", "questionnaire", "queue",
+            "realise", "realistically", "rebellious", "receive", "recommend", "reference", "referring", "rehearsal", "relevant", "religious", "reminiscence", "rendezvous", "representative", "reservoir", "resistance", "restaurant", "rhythm", "ridiculous", "rumour",
+            "sacrifice", "sanctuary", "satellite", "schedule", "scissors", "secretary", "seize", "separate", "significance", "silhouette", "sincerely", "skilful", "smoulder", "souvenir", "speciality", "specifically", "spontaneous", "statistics", "strategy", "stubborn", "subconscious", "substantial", "subtle", "succeed", "successful", "sufficient", "superintendent", "supersede", "susceptible", "suspicious", "syllabus", "symmetrical", "synonymous",
+            "technique", "temperature", "temporarily", "tendency", "theatre", "thoroughly", "threshold", "tolerance", "tomorrow", "tournament", "tragedy", "transferred", "travelling", "tremendous", "truly", "twelfth", "typical", "tyre",
+            "ubiquitous", "unanimous", "undoubtedly", "unforgettable", "unique", "unnecessary", "unnoticeable", "unprecedented", "unsuccessful", "usually",
+            "vacuum", "valuable", "vengeance", "versatile", "veterinary", "vicious", "victorious", "vocabulary", "vulnerable",
+            "warrant", "weather", "weird", "whenever", "whereas", "wherever", "whether", "wholly", "withdrawal", "woollen",
+            "xenophobia", "yacht", "yielding", "zealous", "zoology"
+        ];
+
+        let currentIndex = 0;
+        let timeLeft = 0;
+        const timerDuration = 28;
+        let isPaused = false;
+        let autoVoice = true;
+        let timerInterval;
+        let waitTimeout;
+
+        window.speechSynthesis.onvoiceschanged = () => { window.speechSynthesis.getVoices(); };
+
+        function updateUI() {
+            // This line automatically counts how many words are in your list above!
+            document.getElementById('progress-text').innerText = `Word ${currentIndex + 1} of ${words.length}`;
+        }
+
+        function toggleAutoVoice() {
+            autoVoice = !autoVoice;
+            document.getElementById('auto-btn').innerText = `Auto-Voice: ${autoVoice ? 'ON' : 'OFF'}`;
+        }
+
+        function randomizeWords() {
+            for (let i = words.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [words[i], words[j]] = [words[j], words[i]]; 
+            }
+            
+            currentIndex = 0;
+            clearInterval(timerInterval);
+            clearTimeout(waitTimeout);
+            isPaused = false;
+            
+            document.getElementById('word-display').innerText = "? ? ?";
+            document.getElementById('timer').innerText = "00";
+            document.getElementById('timer').style.color = "#F1C40F";
+            document.getElementById('instruction').innerText = "Words Randomised! Press Start to Begin.";
+            
+            updateUI();
+        }
+
+        function startRound() {
+            clearInterval(timerInterval);
+            clearTimeout(waitTimeout);
+            isPaused = false;
+            timeLeft = timerDuration;
+            
+            const currentWord = words[currentIndex];
+            
+            document.getElementById('word-display').innerText = "? ".repeat(currentWord.length).trim();
+            
+            document.getElementById('instruction').innerText = "Listen to the word and write it down!";
+            
+            let timerDisplay = document.getElementById('timer');
+            timerDisplay.innerText = "--";
+            timerDisplay.style.color = "#F1C40F";
+
+            updateUI();
+
+            if (autoVoice) {
+                playAudio();
+                setTimeout(runTimer, 1500); 
+            } else {
+                runTimer();
+            }
+        }
+
+        function playAudio() {
+            if ('speechSynthesis' in window) {
+                window.speechSynthesis.cancel();
+                let msg = new SpeechSynthesisUtterance(words[currentIndex]);
+                let voices = window.speechSynthesis.getVoices();
+                let gbVoice = voices.find(v => v.lang === 'en-GB' || v.name.includes('UK') || v.name.includes('British'));
+                if (gbVoice) {
+                    msg.voice = gbVoice;
+                }
+                msg.rate = 0.8; 
+                window.speechSynthesis.speak(msg);
+            } else {
+                alert("Sorry, your browser does not support text-to-speech.");
+            }
+        }
+
+        function runTimer() {
+            if (isPaused) return;
+            let timerDisplay = document.getElementById('timer');
+            timerDisplay.innerText = timeLeft < 10 ? "0" + timeLeft : timeLeft;
+            
+            if (timeLeft <= 5) {
+                timerDisplay.style.color = "#E74C3C"; 
+            }
+            
+            if (timeLeft > 0) {
+                timeLeft--;
+                timerInterval = setTimeout(runTimer, 1000);
+            } else {
+                revealWord();
+            }
+        }
+
+        function pauseTimer() {
+            isPaused = true;
+        }
+
+        function resumeTimer() {
+            if (isPaused && timeLeft > 0) {
+                isPaused = false;
+                runTimer();
+            }
+        }
+
+        function revealWord() {
+            clearInterval(timerInterval);
+            document.getElementById('word-display').innerText = words[currentIndex];
+            document.getElementById('instruction').innerText = "Check your spelling!";
+            
+            let timerDisplay = document.getElementById('timer');
+            timerDisplay.innerText = "TIME'S UP";
+            timerDisplay.style.color = "#2ECC71";
+
+            waitTimeout = setTimeout(nextWordAuto, 5000);
+        }
+
+        function nextWordAuto() {
+            if (currentIndex < words.length - 1) {
+                currentIndex++;
+                startRound();
+            } else {
+                document.getElementById('instruction').innerText = "Spelling Bee Complete! Well done!";
+                document.getElementById('word-display').innerText = "🏆";
+                document.getElementById('timer').innerText = "";
+            }
+        }
+
+        function nextWordManual() {
+            if (currentIndex < words.length - 1) {
+                currentIndex++;
+                startRound();
+            }
+        }
+
+        function prevWord() {
+            if (currentIndex > 0) {
+                currentIndex--;
+                startRound();
+            }
+        }
+
+        // Boot up the UI and the auto-counter
+        updateUI();
+    </script>
+</body>
+</html>
