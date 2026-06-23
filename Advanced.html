@@ -308,7 +308,7 @@
             
             let timerDisplay = document.getElementById('timer');
             // If they clicked the button early, display "CHECK", otherwise "TIME'S UP"
-            timerDisplay.innerText = "TIME'S UP";
+            timerDisplay.innerText = isEarly ? "CHECK" : "TIME'S UP";
             timerDisplay.style.color = "#2ECC71";
 
             // Hide the "Check Answer" button once the word is revealed
