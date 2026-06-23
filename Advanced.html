@@ -138,7 +138,6 @@
         <div id="timer">00</div>
         <div id="word-display">? ? ?</div>
         
-        <!-- NEW: Check Answer Button -->
         <button class="btn-action" id="reveal-btn" onclick="revealWord(true)" style="display: none; margin-top: 30px; padding: 15px 30px; font-size: 18px; border-radius: 8px;">Check Answer</button>
     </div>
 
@@ -159,7 +158,6 @@
 
     <!-- JavaScript: The Logic -->
     <script>
-        // The Advanced Word List (300 High-Level British English Words & UK/US Traps)
         const words = [
             "accommodate", "accumulate", "acquire", "aluminium", "amateur", "ambiguous", "analyse", "anonymous", "anticipate", "apologise", "apparatus", "apparent", "appreciate", "appropriate", "archaeology", "architecture", "artificial", "assessment", "atmosphere", "authentic",
             "bacteria", "behaviour", "beneficial", "bizarre", "boundary", "bureaucracy",
@@ -241,7 +239,6 @@
             timerDisplay.innerText = "--";
             timerDisplay.style.color = "#F1C40F";
 
-            // Show the "Check Answer" button so they can click it early
             document.getElementById('reveal-btn').style.display = 'inline-block';
 
             updateUI();
@@ -283,7 +280,7 @@
                 timeLeft--;
                 timerInterval = setTimeout(runTimer, 1000);
             } else {
-                revealWord(false); // Called automatically when time runs out
+                revealWord(false); 
             }
         }
 
@@ -298,20 +295,20 @@
             }
         }
 
-        // Updated to accept a flag indicating if it was clicked early
         function revealWord(isEarly) {
             clearInterval(timerInterval);
-            clearTimeout(waitTimeout); // Stop any overlapping timeouts
+            clearTimeout(waitTimeout); 
             
             document.getElementById('word-display').innerText = words[currentIndex];
             document.getElementById('instruction').innerText = "Check your spelling!";
             
             let timerDisplay = document.getElementById('timer');
-            // If they clicked the button early, display "CHECK", otherwise "TIME'S UP"
-            timerDisplay.innerText = isEarly ? "CHECK" : "TIME'S UP";
+            
+            // FIX: If they click "Check Answer", completely clear the timer text. 
+            // If the time naturally runs out, it will still show "TIME'S UP"
+            timerDisplay.innerText = isEarly ? "" : "TIME'S UP";
             timerDisplay.style.color = "#2ECC71";
 
-            // Hide the "Check Answer" button once the word is revealed
             document.getElementById('reveal-btn').style.display = 'none';
 
             waitTimeout = setTimeout(nextWordAuto, 5000);
